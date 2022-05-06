@@ -2,37 +2,16 @@
 #define BMP_H 1
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #include <string>
+#include <ostream>
+#include "def.h"
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 namespace file
 {
-	enum class DIBHeaderType
-	{
-		CORE_HEADER_V1,
-		CORE_HEADER_V2,
-		INFO_HEADER_V1,
-		INFO_HEADER_V2,
-		INFO_HEADER_V3,
-		INFO_HEADER_V4,
-		INFO_HEADER_V5,
-
-		BITMAPCOREHEADER = CORE_HEADER_V1,
-		BITMAPCOREHEADER2 = CORE_HEADER_V2,
-		BITMAPINFOHEADER = INFO_HEADER_V1,
-		BITMAPV2INFOHEADER = INFO_HEADER_V2,
-		BITMAPV3INFOHEADER, = INFO_HEADER_V3,
-		BITMAPV4HEADER = INFO_HEADER_V4,
-		BITMAPV5HEADER = INFO_HEADER_V5,
-
-		OS21XBITMAPHEADER = BITMAPCOREHEADER,
-		OS22XBITMAPHEADER = BITMAPCOREHEADER2
-	};
-
 	class BMP
 	{
 		public:
-			BMP();
-			BMP(std::string f);
-			~BMP();
+			BMP() =default;
+			~BMP() =default;
 
 			BMP(const BMP&) =delete;
 			BMP(BMP&&) =delete;
@@ -41,10 +20,32 @@ namespace file
 			BMP& operator=(BMP&&) =delete;
 
 			void load(std::string f);
+			void save(std::string f);
+			void info(std::ostream& os);
+
+			bmp::InfoHeader* info_header()
+				{ return this->_info_header.get(); }
+
+			bmp::DWORD* color_table()
+				{ return this->_color_table.get(); }
+
+			bmp::BYTE* pixel_array()
+				{ return this->_pixel_array.get(); }
 
 		private:
-			DIBHeaderType type;
-	}
+			using FileHeader = std::unique_ptr<bmp::FileHeader>;
+			using InfoHeader = std::unique_ptr<bmp::InfoHeader>;
+			using FileInfo = std::unique_ptr<bmp::FileInfo>;
+
+			FileHeader _file_header;
+			InfoHeader _info_header;
+			bmp::ColorTable _color_table;
+			bmp::PixelArray _pixel_array;
+			bmp::ICCColorProfile _color_profile;
+			FileInfo _file_info;
+
+			std::string to_string();
+	};
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #endif

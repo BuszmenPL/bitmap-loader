@@ -2,6 +2,7 @@
 #define DEF_H 1
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #include <cstdint>
+#include <memory>
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 namespace file
 {
@@ -11,7 +12,7 @@ namespace file
 		using WORD = uint16_t;
 		using DWORD = uint32_t;
 		using LONG = int32_t;
-
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct FixedValue
 		{
 			DWORD fractional :30;
@@ -19,7 +20,7 @@ namespace file
 		};
 
 		using FXPT2DOT30 = FixedValue;
-
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct Vector
 		{
 			FXPT2DOT30 x;
@@ -28,7 +29,7 @@ namespace file
 		};
 
 		using CIEXYZ = Vector;
-
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct ColorSpace
 		{
 			CIEXYZ red;
@@ -37,8 +38,8 @@ namespace file
 		};
 
 		using CIEXYZTRIPLE = ColorSpace;
-
-		struct BMPFileHeader
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		struct FileHeader
 		{
 			WORD type;
 			DWORD size;
@@ -46,7 +47,7 @@ namespace file
 			WORD reserved2;
 			DWORD offBits;
 		};
-
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct DIBCoreHeaderV1
 		{
 			DWORD size;
@@ -55,7 +56,7 @@ namespace file
 			WORD planes;
 			WORD bitCount;
 		};
-
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct DIBCoreHeaderV2
 		{
 			DWORD size;
@@ -79,6 +80,28 @@ namespace file
 			DWORD appData;
 		};
 
+		enum CompressionMethod
+		{
+			BI_RGB =0,
+			BI_RLE8,
+			BI_RLE4,
+			BI_BITFIELDS,
+			BI_JPEG,
+			BI_PNG,
+			BI_ALPHABITFIELDS,
+			BI_CMYK,
+			BI_CMYKRLE8,
+			BI_CMYKRLE4
+		};
+
+		enum HalftoningAlgorithm
+		{
+			NONE =0,
+			ERROR_DIFFUSION,
+			PANDA,
+			SUPER_CIRCLE
+		};
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct DIBHeaderV1
 		{
 			DWORD size;
@@ -93,7 +116,7 @@ namespace file
 			DWORD clrUsed;
 			DWORD clrImportant;
 		};
-
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct DIBHeaderV2
 		{
 			DWORD size;
@@ -111,7 +134,7 @@ namespace file
 			DWORD greenMask;
 			DWORD blueMask;
 		};
-
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct DIBHeaderV3
 		{
 			DWORD size;
@@ -130,7 +153,7 @@ namespace file
 			DWORD blueMask;
 			DWORD alphaMask;
 		};
-
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct DIBHeaderV4
 		{
 			DWORD size;
@@ -154,7 +177,7 @@ namespace file
 			DWORD gammaGreen;
 			DWORD gammaBlue;
 		};
-
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct DIBHeaderV5
 		{
 			DWORD size;
@@ -182,8 +205,8 @@ namespace file
 			DWORD profileSize;
 			DWORD reserved;
 		};
-
-		using BITMAPFILEHEADER = BMPFileHeader;
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		using BITMAPFILEHEADER = FileHeader;
 
 		using BITMAPCOREHEADER = DIBCoreHeaderV1;
 		using BITMAPCOREHEADER2 = DIBCoreHeaderV2;
@@ -195,8 +218,8 @@ namespace file
 
 		using OS21XBITMAPHEADER = BITMAPCOREHEADER;
 		using OS22XBITMAPHEADER = BITMAPCOREHEADER2;
-
-		struct BMPHeader :public DIBHeaderV5
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		struct InfoHeader :public DIBHeaderV5
 		{
 			DWORD xRes;
 			DWORD yRes;
@@ -208,7 +231,44 @@ namespace file
 			DWORD halftoneSize2;
 			DWORD colorSpace;
 			DWORD appData;
-		}
+		};
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		enum class DIBHeaderType
+		{
+			CORE_HEADER_V1,
+			CORE_HEADER_V2,
+			INFO_HEADER_V1,
+			INFO_HEADER_V2,
+			INFO_HEADER_V3,
+			INFO_HEADER_V4,
+			INFO_HEADER_V5,
+
+			BITMAPCOREHEADER = CORE_HEADER_V1,
+			BITMAPCOREHEADER2 = CORE_HEADER_V2,
+			BITMAPINFOHEADER = INFO_HEADER_V1,
+			BITMAPV2INFOHEADER = INFO_HEADER_V2,
+			BITMAPV3INFOHEADER = INFO_HEADER_V3,
+			BITMAPV4HEADER = INFO_HEADER_V4,
+			BITMAPV5HEADER = INFO_HEADER_V5,
+
+			OS21XBITMAPHEADER = BITMAPCOREHEADER,
+			OS22XBITMAPHEADER = BITMAPCOREHEADER2
+		};
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		using ColorTable = std::unique_ptr<DWORD []>;
+		using PixelArray = std::unique_ptr<BYTE []>;
+		using ICCColorProfile = std::unique_ptr<BYTE []>;
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		struct FileInfo
+		{
+			DIBHeaderType dib_type;
+			uint32_t gab1;
+			uint32_t gab2;
+			uint8_t red_mask;
+			uint8_t green_mask;
+			uint8_t blue_mask;
+			uint8_t alpha_mask;
+		};
 	}
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
