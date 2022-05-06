@@ -10,7 +10,7 @@ namespace file
 	class BMP
 	{
 		public:
-			BMP() =default;
+			BMP();
 			~BMP() =default;
 
 			BMP(const BMP&) =delete;
