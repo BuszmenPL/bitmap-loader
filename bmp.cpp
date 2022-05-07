@@ -15,101 +15,16 @@ namespace file
 	BMP::BMP()
 		:_file_header(new bmp::FileHeader), _info_header(new bmp::InfoHeader), _file_info(new bmp::FileInfo) {}
 	void BMP::load(std::string f) {
-		constexpr uint32_t DIB_SIZE {sizeof(bmp::DWORD)};
-		constexpr uint32_t FILE_HEADER_SIZE {14};
-
 		ifstream file;
 		file.exceptions(ifstream::failbit | ifstream::badbit);
 
 		try {
 			file.open(f, ios::binary);
 
-			type::Array array;
-			array.alloc(FILE_HEADER_SIZE + DIB_SIZE);
-
-			/* File Header */
-			file.read(array.get(), FILE_HEADER_SIZE + DIB_SIZE); // ładowanie nagłówka pliku + rozmiar nagłówka DIB
-			_file_header->type = convertW();
-			string tmp = to_string();
-
-			if(!(tmp == "BM" || tmp == "BA" || tmp == "CI" || tmp == "CP" || tmp == "IC" || tmp == "PT"))
-				throw invalid_argument("Open file: it is not a BMP file " + tmp);
-
-			_file_header->size = convertD();
-			_file_header->reserved1 = convertW();
-			_file_header->reserved2 = convertW();
-			_file_header->offBits = convertD();
-
-			/* DIB Header */
-			_info_header->size = convertD();
-
-			array.alloc(_info_header->size - DIB_SIZE);
-			file.read(array.get(), _info_header->size - DIB_SIZE); // ładowanie nagłówka DIB (rozmiar załadowany wcześniej!)
-
+			load_header(file);
 			get_dib_type();
-			if(_file_info->dib_type == bmp::DIBHeaderType::CORE_HEADER_V1) {
-				_info_header->cWidth = convertW();
-				_info_header->cHeight = convertW();
-				_info_header->planes = convertW();
-				_info_header->bitCount = convertW();
-			}
-		 	else if(_file_info->dib_type == bmp::DIBHeaderType::CORE_HEADER_V2) {
-				_info_header->cWidth = convertD();
-				_info_header->cHeight = convertD();
-				_info_header->planes = convertW();
-				_info_header->bitCount = convertW();
-				_info_header->compression = convertD();
-				_info_header->sizeImage = convertD();
-				_info_header->xRes = convertD();
-				_info_header->yRes = convertD();
-				_info_header->clrUsed = convertD();
-				_info_header->clrImportant = convertD();
-				_info_header->resUnit = convertW();
-				_info_header->cReserved = convertW();
-				_info_header->orientation = convertW();
-				_info_header->halftoning = convertW();
-				_info_header->halftoneSize1 = convertD();
-				_info_header->halftoneSize2 = convertD();
-				_info_header->colorSpace = convertD();
-				_info_header->appData = convertD();
-			}
-			else {
-				_info_header->width = convertL();
-				_info_header->height = convertL();
-				_info_header->planes = convertW();
-				_info_header->bitCount = convertW();
-				_info_header->compression = convertD();
-				_info_header->sizeImage = convertD();
-				_info_header->xPelsPerMeter = convertL();
-				_info_header->yPelsPerMeter = convertL();
-				_info_header->clrUsed = convertD();
-				_info_header->clrImportant = convertD();
-
-				if(_info_header->size >= bmp::IHV2_SIZE) {
-					_info_header->redMask = convertD();
-					_info_header->greenMask = convertD();
-					_info_header->blueMask = convertD();
-				}
-
-				if(_info_header->size >= bmp::IHV3_SIZE)
-					_info_header->alphaMask = convertD();
-
-				if(_info_header->size >= bmp::IHV4_SIZE) {
-					_info_header->cSType = convertD();
-					get_endpoints(array.get());
-					array.add(bmp::CIEXYZTRIPLE_SIZE);
-					_info_header->gammaRed = convertD();
-					_info_header->gammaGreen = convertD();
-					_info_header->gammaBlue = convertD();
-				}
-
-				if(_info_header->size == bmp::IHV5_SIZE) {
-					_info_header->intent = convertD();
-					_info_header->profileData = convertD();
-					_info_header->profileSize = convertD();
-					_info_header->reserved = convertD();
-				}
-			}
+			load_dib(file);
+			load_pixsels(file);
 		}
 		catch(ifstream::failure& error) {
 			throw runtime_error(error.what());
@@ -127,6 +42,104 @@ namespace file
 		os << "  Zarezerwowany1: " << _file_header->reserved1 << endl;
 		os << "  Zarezerwowany2: " << _file_header->reserved2 << endl;
 		os << "  Offset tablicy pikseli: " << _file_header->offBits << endl << endl;
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::load_header(std::istream& file) {
+		constexpr uint32_t DIB_SIZE {sizeof(bmp::DWORD)};
+		constexpr uint32_t FILE_HEADER_SIZE {14};
+
+		type::Array array(FILE_HEADER_SIZE + DIB_SIZE);
+		// ładowanie nagłówka pliku + rozmiar nagłówka DIB
+		file.read(array.get(), FILE_HEADER_SIZE + DIB_SIZE);
+
+		_file_header->type = convertW();
+
+		string tmp = to_string();
+		if(!(tmp == "BM" || tmp == "BA" || tmp == "CI" || tmp == "CP" || tmp == "IC" || tmp == "PT"))
+			throw invalid_argument("Open file: it is not a BMP file " + tmp);
+
+		_file_header->size = convertD();
+		_file_header->reserved1 = convertW();
+		_file_header->reserved2 = convertW();
+		_file_header->offBits = convertD();
+
+		// rozmiar nagłówka DIB
+		_info_header->size = convertD();
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::load_dib(std::istream& file) {
+		constexpr uint32_t DIB_SIZE {sizeof(bmp::DWORD)};
+
+		type::Array array(_info_header->size - DIB_SIZE);
+		// ładowanie nagłówka DIB (rozmiar załadowany wcześniej!)
+		file.read(array.get(), _info_header->size - DIB_SIZE);
+
+		if(_file_info->dib_type == bmp::DIBHeaderType::CORE_HEADER_V1) {
+			_info_header->cWidth = convertW();
+			_info_header->cHeight = convertW();
+			_info_header->planes = convertW();
+			_info_header->bitCount = convertW();
+		}
+		else if(_file_info->dib_type == bmp::DIBHeaderType::CORE_HEADER_V2) {
+			_info_header->cWidth = convertD();
+			_info_header->cHeight = convertD();
+			_info_header->planes = convertW();
+			_info_header->bitCount = convertW();
+			_info_header->compression = convertD();
+			_info_header->sizeImage = convertD();
+			_info_header->xRes = convertD();
+			_info_header->yRes = convertD();
+			_info_header->clrUsed = convertD();
+			_info_header->clrImportant = convertD();
+			_info_header->resUnit = convertW();
+			_info_header->cReserved = convertW();
+			_info_header->orientation = convertW();
+			_info_header->halftoning = convertW();
+			_info_header->halftoneSize1 = convertD();
+			_info_header->halftoneSize2 = convertD();
+			_info_header->colorSpace = convertD();
+			_info_header->appData = convertD();
+		}
+		else {
+			_info_header->width = convertL();
+			_info_header->height = convertL();
+			_info_header->planes = convertW();
+			_info_header->bitCount = convertW();
+			_info_header->compression = convertD();
+			_info_header->sizeImage = convertD();
+			_info_header->xPelsPerMeter = convertL();
+			_info_header->yPelsPerMeter = convertL();
+			_info_header->clrUsed = convertD();
+			_info_header->clrImportant = convertD();
+
+			if(_info_header->size >= bmp::IHV2_SIZE) {
+				_info_header->redMask = convertD();
+				_info_header->greenMask = convertD();
+				_info_header->blueMask = convertD();
+			}
+			if(_info_header->size >= bmp::IHV3_SIZE)
+				_info_header->alphaMask = convertD();
+
+			if(_info_header->size >= bmp::IHV4_SIZE) {
+				_info_header->cSType = convertD();
+				get_endpoints(array.get());
+				array.add(bmp::CIEXYZTRIPLE_SIZE);
+				_info_header->gammaRed = convertD();
+				_info_header->gammaGreen = convertD();
+				_info_header->gammaBlue = convertD();
+			}
+
+			if(_info_header->size == bmp::IHV5_SIZE) {
+				_info_header->intent = convertD();
+				_info_header->profileData = convertD();
+				_info_header->profileSize = convertD();
+				_info_header->reserved = convertD();
+			}
+		}
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::load_pixsels(std::istream& file) {
+
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::string BMP::to_string() {

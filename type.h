@@ -8,7 +8,7 @@ namespace type
 	class Array
 	{
 		public:
-			Array();
+			Array(uint32_t size);
 			~Array();
 
 			Array(const Array&) =delete;
@@ -17,15 +17,12 @@ namespace type
 			Array& operator=(const Array&) =delete;
 			Array& operator=(Array&&) =delete;
 
-			void alloc(uint32_t size);
-			void add(uint32_t);
+			void add(uint32_t size);
 			char* get();
 
 		private:
 			char* array;
 			uint32_t sz;
-
-			void clear();
 	};
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	template <typename T>

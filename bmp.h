@@ -3,6 +3,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #include <string>
 #include <ostream>
+#include <istream>
 #include "def.h"
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 namespace file
@@ -44,9 +45,13 @@ namespace file
 			bmp::ICCColorProfile _color_profile;
 			FileInfo _file_info;
 
+			void load_header(std::istream&);
+			void load_dib(std::istream&);
+			void load_pixsels(std::istream&);
+
 			std::string to_string();
 			void get_dib_type();
-			void get_endpoints(char* array);
+			void get_endpoints(char*);
 	};
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

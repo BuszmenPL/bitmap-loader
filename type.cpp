@@ -2,21 +2,11 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 namespace type
 {
-	Array::Array() :array{}, sz{} {}
+	Array::Array(uint32_t size)
+		:array{new char [size]}, sz{} {}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	Array::~Array() {
-		clear();
-	}
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	void Array::clear() {
-		if(this->array)
-			delete [] this->array;
-	}
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	void Array::alloc(uint32_t size) {
-		this->clear();
-		this->array = new char [size];
-		this->sz = 0;
+		delete [] array;
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void Array::add(uint32_t size) {
