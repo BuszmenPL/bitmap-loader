@@ -45,6 +45,8 @@ namespace file
 			FileInfo _file_info;
 
 			std::string to_string();
+			void get_dib_type();
+			void get_endpoints(char* array);
 	};
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

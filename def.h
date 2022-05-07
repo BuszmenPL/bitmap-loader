@@ -60,8 +60,8 @@ namespace file
 		struct DIBCoreHeaderV2
 		{
 			DWORD size;
-			WORD width;
-			WORD height;
+			DWORD width;
+			DWORD height;
 			WORD planes;
 			WORD bitCount;
 			DWORD compression;
@@ -219,18 +219,31 @@ namespace file
 		using OS21XBITMAPHEADER = BITMAPCOREHEADER;
 		using OS22XBITMAPHEADER = BITMAPCOREHEADER2;
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		constexpr uint32_t CHV1_SIZE {12};
+		constexpr uint32_t CHV2_SIZE {64};
+		constexpr uint32_t IHV1_SIZE {40};
+		constexpr uint32_t IHV2_SIZE {52};
+		constexpr uint32_t IHV3_SIZE {56};
+		constexpr uint32_t IHV4_SIZE {108};
+		constexpr uint32_t IHV5_SIZE {124};
+		constexpr uint32_t FXPT2DOT30_SIZE {sizeof(DWORD)};
+		constexpr uint32_t CIEXYZ_SIZE {(FXPT2DOT30_SIZE*3)};
+		constexpr uint32_t CIEXYZTRIPLE_SIZE {(CIEXYZ_SIZE*3)};
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct InfoHeader :public DIBHeaderV5
 		{
 			DWORD xRes;
 			DWORD yRes;
 			WORD resUnit;
-			WORD osReserved;
+			WORD cReserved;
 			WORD orientation;
 			WORD halftoning;
 			DWORD halftoneSize1;
 			DWORD halftoneSize2;
 			DWORD colorSpace;
 			DWORD appData;
+			DWORD cWidth; // core width / OS width
+			DWORD cHeight; // core height / OS height
 		};
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		enum class DIBHeaderType
