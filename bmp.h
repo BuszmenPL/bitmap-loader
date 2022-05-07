@@ -24,6 +24,10 @@ namespace file
 			void save(std::string f);
 			void info(std::ostream& os);
 
+			uint32_t width() const;
+			uint32_t height() const;
+			uint32_t pixel_count() const;
+
 			bmp::InfoHeader* info_header()
 				{ return this->_info_header.get(); }
 

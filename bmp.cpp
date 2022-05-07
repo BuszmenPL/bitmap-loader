@@ -139,7 +139,39 @@ namespace file
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::load_pixsels(std::istream& file) {
+		const uint32_t size = pixel_count();
+		_pixel_array = move(bmp::PixelArray(new bmp::BYTE [size]));
 
+		file.seekg(_file_header->offBits, istream::beg);
+		for(uint32_t i{}; i<height(); ++i) {
+			file.read(reinterpret_cast<char*>(_pixel_array.get()), width());
+			file.seekg(4, istream::cur);
+		}
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	uint32_t BMP::width() const {
+		const bmp::DIBHeaderType t = _file_info->dib_type;
+		if(t == bmp::DIBHeaderType::CORE_HEADER_V1 || t == bmp::DIBHeaderType::CORE_HEADER_V2)
+			return _info_header->cWidth;
+		else
+			return _info_header->width;
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	uint32_t BMP::height() const {
+		const bmp::DIBHeaderType t = _file_info->dib_type;
+		if(t == bmp::DIBHeaderType::CORE_HEADER_V1 || t == bmp::DIBHeaderType::CORE_HEADER_V2)
+			return _info_header->cHeight;
+		else
+			return _info_header->height;
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	uint32_t BMP::pixel_count() const {
+		uint32_t n {1};
+
+		if(_info_header->bitCount > 8)
+			n = _info_header->bitCount / 8;
+
+		return n * width() * height();
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	std::string BMP::to_string() {
