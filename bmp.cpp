@@ -26,6 +26,7 @@ namespace file
 			get_dib_type();
 			load_dib(file);		
 			load_mask(file);
+			load_color_table(file);
 			load_pixsels(file);
 		}
 		catch(ifstream::failure& error) {
@@ -197,6 +198,12 @@ namespace file
 		}
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::load_color_table(std::istream& file) {
+		if(_info_header->clrUsed || _info_header->bitCount <= 8) {
+
+		}
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::load_pixsels(std::istream& file) {
 		const uint32_t size = pixel_array_size();
 
@@ -319,7 +326,6 @@ namespace file
 		}
 		else
 			os << "Nie występuje" << endl;
-
 	}
 
 	/* Load */
