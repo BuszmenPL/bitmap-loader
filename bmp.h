@@ -26,7 +26,8 @@ namespace file
 
 			uint32_t width() const;
 			uint32_t height() const;
-			uint32_t pixel_count() const;
+			uint32_t pixel_size() const;
+			uint32_t pixel_array_size() const;
 
 			bmp::InfoHeader* info_header()
 				{ return this->_info_header.get(); }
@@ -53,9 +54,18 @@ namespace file
 			void load_dib(std::istream&);
 			void load_pixsels(std::istream&);
 
-			std::string to_string();
+			void info_header(std::ostream&);
+			void info_dib(std::ostream&);
+			void info_color_table(std::ostream&);
+			void info_pixels_table(std::ostream&);
+			void info_icc(std::ostream&);
+			void info_file(std::ostream&);
+
 			void get_dib_type();
 			void get_endpoints(char*);
+			
+			std::string to_string();
+			std::string dib_to_string();
 	};
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

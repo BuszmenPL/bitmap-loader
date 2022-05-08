@@ -36,13 +36,50 @@ namespace file
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::info(std::ostream& os) {
-		os << "Nagłówek Pliku" << endl;
-		os << "  Typ/Sygnatura: " << to_string() << endl;
-		os << "  Rozmiar: " << _file_header->size << endl;
-		os << "  Zarezerwowany1: " << _file_header->reserved1 << endl;
-		os << "  Zarezerwowany2: " << _file_header->reserved2 << endl;
-		os << "  Offset tablicy pikseli: " << _file_header->offBits << endl << endl;
+		info_header(os);
+		info_dib(os);
+
+		if(_file_info->dib_type != bmp::DIBHeaderType::CORE_HEADER_V1 && _info_header->bitCount <= 8)
+			info_color_table(os);
+
+		info_pixels_table(os);
+
+		if(_file_info->dib_type == bmp::DIBHeaderType::INFO_HEADER_V5 && _info_header->profileSize)
+			info_icc(os);
+
+		info_file(os);
 	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	uint32_t BMP::width() const {
+		const bmp::DIBHeaderType t = _file_info->dib_type;
+		if(t == bmp::DIBHeaderType::CORE_HEADER_V1 || t == bmp::DIBHeaderType::CORE_HEADER_V2)
+			return _info_header->cWidth;
+		else
+			return _info_header->width;
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	uint32_t BMP::height() const {
+		const bmp::DIBHeaderType t = _file_info->dib_type;
+		if(t == bmp::DIBHeaderType::CORE_HEADER_V1 || t == bmp::DIBHeaderType::CORE_HEADER_V2)
+			return _info_header->cHeight;
+		else
+			return _info_header->height;
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	uint32_t BMP::pixel_size() const {
+		uint32_t n {1};
+
+		if(_info_header->bitCount > 8)
+			n = _info_header->bitCount / 8;
+
+		return n;
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	uint32_t BMP::pixel_array_size() const {
+		return pixel_size() * width() * height();
+	}
+
+	/* Load */
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::load_header(std::istream& file) {
 		constexpr uint32_t DIB_SIZE {sizeof(bmp::DWORD)};
@@ -139,47 +176,74 @@ namespace file
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::load_pixsels(std::istream& file) {
-		const uint32_t size = pixel_count();
-		_pixel_array = move(bmp::PixelArray(new bmp::BYTE [size]));
+		const uint32_t size = pixel_array_size();
 
+		_pixel_array = move(bmp::PixelArray(new bmp::BYTE [size]));
 		file.seekg(_file_header->offBits, istream::beg);
+
 		for(uint32_t i{}; i<height(); ++i) {
-			file.read(reinterpret_cast<char*>(_pixel_array.get()), width());
+			file.read(reinterpret_cast<char*>(_pixel_array.get() + (width() * i)), width());
 			file.seekg(4, istream::cur);
 		}
 	}
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	uint32_t BMP::width() const {
-		const bmp::DIBHeaderType t = _file_info->dib_type;
-		if(t == bmp::DIBHeaderType::CORE_HEADER_V1 || t == bmp::DIBHeaderType::CORE_HEADER_V2)
-			return _info_header->cWidth;
-		else
-			return _info_header->width;
-	}
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	uint32_t BMP::height() const {
-		const bmp::DIBHeaderType t = _file_info->dib_type;
-		if(t == bmp::DIBHeaderType::CORE_HEADER_V1 || t == bmp::DIBHeaderType::CORE_HEADER_V2)
-			return _info_header->cHeight;
-		else
-			return _info_header->height;
-	}
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	uint32_t BMP::pixel_count() const {
-		uint32_t n {1};
 
-		if(_info_header->bitCount > 8)
-			n = _info_header->bitCount / 8;
-
-		return n * width() * height();
+	/* Info */
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::info_header(std::ostream& os) {
+		os << "Nagłówek Pliku" << endl;
+		os << "  Typ/Sygnatura: " << to_string() << endl;
+		os << "  Rozmiar: " << _file_header->size << endl;
+		os << "  Zarezerwowany1: " << _file_header->reserved1 << endl;
+		os << "  Zarezerwowany2: " << _file_header->reserved2 << endl;
+		os << "  Offset tablicy pikseli: " << _file_header->offBits << endl << endl;
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	std::string BMP::to_string() {
-		string tmp;
-		tmp = static_cast<char>(_file_header->type);
-		tmp += static_cast<char>(_file_header->type >> 8);
-		return tmp;
+	void BMP::info_dib(std::ostream& os) {
+		/*os << "Nagłówek DIB" << endl;
+		os << "  Typ/Sygnatura: " << to_string() << endl;
+		os << "  Rozmiar: " << _file_header->size << endl;
+		os << "  Zarezerwowany1: " << _file_header->reserved1 << endl;
+		os << "  Zarezerwowany2: " << _file_header->reserved2 << endl;
+		os << "  Offset tablicy pikseli: " << _file_header->offBits << endl << endl;*/
 	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::info_color_table(std::ostream& os) {
+
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::info_pixels_table(std::ostream& os) {
+
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::info_icc(std::ostream& os) {
+
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::info_file(std::ostream& os) {
+		os << "Dodatkowe informacje o pliku" << endl;
+		os << "  Typ nagłówka DIB: " << dib_to_string() << endl;
+		os << "  Rozmiar przestrzeni wyrównania1: " << _file_info->gab1 << endl;
+		os << "  Rozmiar przestrzeni wyrównania2: " << _file_info->gab2 << endl;
+		os << "  Dodatkowa maska: ";
+
+		if(true) {
+			os << "rozmair: " << 16 << endl;
+			os << "    RedMask: " << _file_info->red_mask << endl;
+			os << "    RedMask: " << _file_info->green_mask << endl;
+			os << "    RedMask: " << _file_info->blue_mask << endl;
+			os << "    RedMask: ";
+
+			if(true)
+				os << _file_info->alpha_mask << endl;
+			else
+				os << "Niezdefiniowano" << endl;
+		}
+		else
+			os << "Niezdefiniowano" << endl;
+
+	}
+
+	/* Load */
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::get_dib_type() {
 		switch(_info_header->size) {
@@ -205,5 +269,31 @@ namespace file
 		_info_header->endpoints.blue = load_vector(array);
 		_info_header->endpoints.green = load_vector(array + bmp::CIEXYZ_SIZE);
 		_info_header->endpoints.red = load_vector(array + (2*bmp::CIEXYZ_SIZE));
+	}
+
+	/* Info */
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	std::string BMP::to_string() {
+		string tmp;
+		tmp = static_cast<char>(_file_header->type);
+		tmp += static_cast<char>(_file_header->type >> 8);
+		return tmp;
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	std::string BMP::dib_to_string() {
+		const bmp::DIBHeaderType type = _file_info->dib_type;
+		string text;
+
+		switch(type) {
+			case bmp::DIBHeaderType::CORE_HEADER_V1: text = "CORE_HEADER_V1 BITMAPCOREHEADER OS21XBITMAPHEADER"; break;
+			case bmp::DIBHeaderType::CORE_HEADER_V2: text = "CORE_HEADER_V2 BITMAPCOREHEADER2 OS22XBITMAPHEADER"; break;
+			case bmp::DIBHeaderType::INFO_HEADER_V1: text = "INFO_HEADER_V1 BITMAPINFOHEADER"; break;
+			case bmp::DIBHeaderType::INFO_HEADER_V2: text = "INFO_HEADER_V2 BITMAPV2INFOHEADER"; break;
+			case bmp::DIBHeaderType::INFO_HEADER_V3: text = "INFO_HEADER_V3 BITMAPV3INFOHEADER"; break;
+			case bmp::DIBHeaderType::INFO_HEADER_V4: text = "INFO_HEADER_V4 BITMAPV4HEADER"; break;
+			case bmp::DIBHeaderType::INFO_HEADER_V5: text = "INFO_HEADER_V5 BITMAPV5HEADER"; break;
+		}
+
+		return text;
 	}
 }
