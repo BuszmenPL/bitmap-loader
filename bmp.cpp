@@ -210,7 +210,7 @@ namespace file
 		os << "  Głębia: " << _info_header->bitCount << endl;
 
 		if(type != bmp::DIBHeaderType::CORE_HEADER_V1) {
-			os << "  Kompresja: " << _info_header->compression << endl;
+			os << "  Kompresja: " << compression_to_string() << endl;
 			os << "  Rozmiar tablicy pikseli: " << _info_header->sizeImage << endl;
 		}
 
@@ -232,7 +232,7 @@ namespace file
 			os << "  resUnit: " << _info_header->resUnit << endl;
 			os << "  Zarezerwowany: " << _info_header->cReserved << endl;
 			os << "  Orientacja: " << _info_header->orientation << endl;
-			os << "  Półtonowanie: " << _info_header->halftoning << endl;
+			os << "  Półtonowanie: " << halftoning_to_string() << endl;
 			os << "  Półton parametr1: " << _info_header->halftoneSize1 << endl;
 			os << "  Półton parametr2: " << _info_header->halftoneSize2 << endl;
 			os << "  Przestrzeń koloru: " << _info_header->colorSpace << endl;
@@ -244,7 +244,7 @@ namespace file
 			os << "  Maska niebieska: " << bitset<32>(_info_header->blueMask) << endl;
 
 			if(_info_header->size >= bmp::IHV3_SIZE)
-				os << "  Maska alfa: " << _info_header->alphaMask << endl;
+				os << "  Maska alfa:      " << bitset<32>(_info_header->alphaMask) << endl;
 
 			if(_info_header->size >= bmp::IHV4_SIZE) {
 				os << "  Typ przestrzeni kolorów: " << _info_header->cSType << endl;
@@ -360,6 +360,37 @@ namespace file
 		return text;
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	std::string BMP::compression_to_string() {
+		string text;
+
+		switch(_info_header->compression) {
+			case bmp::CompressionMethod::BI_RGB: text = "[BI_RGB, Metoda: Brak]"; break;
+			case bmp::CompressionMethod::BI_RLE8: text = "[BI_RLE8, Metoda: RLE 8-bit/pixel ]"; break;
+			case bmp::CompressionMethod::BI_RLE4: text = "[BI_RLE4, Metoda: RLE 4-bit/pixel ]"; break;
+			case bmp::CompressionMethod::BI_BITFIELDS: text = "[BI_BITFIELDS, Metoda: Huffman 1D]"; break;
+			case bmp::CompressionMethod::BI_JPEG: text = "[BI_JPEG, Metoda: RLE-24]"; break;
+			case bmp::CompressionMethod::BI_PNG: text = "[BI_PNG, Metoda: RLE-24]"; break;
+			case bmp::CompressionMethod::BI_ALPHABITFIELDS: text = "[BI_ALPHABITFIELDS, Metoda: RGBA bit field masks]"; break;
+			case bmp::CompressionMethod::BI_CMYK: text = "[BI_CMYK, Metoda: Brak]"; break;
+			case bmp::CompressionMethod::BI_CMYKRLE8: text = "[BI_CMYKRLE8, Metoda: RLE-8]"; break;
+			case bmp::CompressionMethod::BI_CMYKRLE4: text = "[BI_CMYKRLE4, Metoda: RLE-4]"; break;
+		}
+
+		return text;
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	std::string BMP::halftoning_to_string() {
+		string text;
+
+		switch(_info_header->halftoning) {
+			case bmp::HalftoningAlgorithm::NONE: text= "Brak"; break;
+			case bmp::HalftoningAlgorithm::ERROR_DIFFUSION: text= "Error diffusion"; break;
+			case bmp::HalftoningAlgorithm::PANDA: text= "PANDA: Processing Algorithm for Noncoded Document Acquisition"; break;
+			case bmp::HalftoningAlgorithm::SUPER_CIRCLE: text= "Super-circle"; break;
+		}
+
+		return text;
+	}
 	/*std::string BMP::mask_to_string(bmp::DWORD m) {
 		string text{"0x"};
 
