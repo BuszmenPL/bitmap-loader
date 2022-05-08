@@ -281,6 +281,8 @@ namespace file
 			uint8_t green_mask;
 			uint8_t blue_mask;
 			uint8_t alpha_mask;
+			bool exist_mask;
+			bool exist_alpha;
 		};
 	}
 }

@@ -24,7 +24,8 @@ namespace file
 
 			load_header(file);
 			get_dib_type();
-			load_dib(file);
+			load_dib(file);		
+			load_mask(file);
 			load_pixsels(file);
 		}
 		catch(ifstream::failure& error) {
@@ -176,6 +177,26 @@ namespace file
 		}
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::load_mask(std::istream& file) {
+		if(_file_info->dib_type == bmp::DIBHeaderType::INFO_HEADER_V1 &&
+			(_info_header->compression == bmp::BI_BITFIELDS || _info_header->compression == bmp::BI_ALPHABITFIELDS)) {
+
+			const uint32_t n{_info_header->compression == bmp::BI_BITFIELDS?(sizeof(bmp::DWORD)*3):(sizeof(bmp::DWORD)*4)};
+			type::Array array(n);
+			file.read(array.get(), n);
+
+			_file_info->red_mask = convertD();
+			_file_info->green_mask = convertD();
+			_file_info->blue_mask = convertD();
+			_file_info->exist_mask = true;
+
+			if(_info_header->compression == bmp::BI_ALPHABITFIELDS) {
+				_file_info->alpha_mask = convertD();
+				_file_info->exist_alpha = true;
+			}
+		}
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::load_pixsels(std::istream& file) {
 		const uint32_t size = pixel_array_size();
 
@@ -215,27 +236,27 @@ namespace file
 		}
 
 		if(type == bmp::DIBHeaderType::CORE_HEADER_V2) {
-			os << "  xRes: " << _info_header->xRes << endl;
-			os << "  yRes: " << _info_header->yRes << endl;
+			os << "  Pozioma rozdzielczość obrazu: " << _info_header->xRes << endl;
+			os << "  Pionowa rozdzielczość obrazu: " << _info_header->yRes << endl;
 		}
 		else {
-			os << "  xPelsPerMeter: " << _info_header->xPelsPerMeter << endl;
-			os << "  yPelsPerMeter: " << _info_header->yPelsPerMeter << endl;
+			os << "  Pozioma rozdzielczość obrazu: " << _info_header->xPelsPerMeter << endl;
+			os << "  Pionowa rozdzielczość obrazu: " << _info_header->yPelsPerMeter << endl;
 		}
 
 		if(type != bmp::DIBHeaderType::CORE_HEADER_V1) {
-			os << "  clrUsed: " << _info_header->clrUsed << endl;
-			os << "  clrImportant: " << _info_header->clrImportant << endl;
+			os << "  Liczba kolorów w palecie kolorów: " << _info_header->clrUsed << endl;
+			os << "  Liczba ważnych kolorów: " << _info_header->clrImportant << endl;
 		}
 
 		if(type == bmp::DIBHeaderType::CORE_HEADER_V2) {
-			os << "  resUnit: " << _info_header->resUnit << endl;
+			os << "  Jednostka: piksele/metr" << endl; // Jedyna zdefiniowana wartość to 0 (_info_header->resUnit)
 			os << "  Zarezerwowany: " << _info_header->cReserved << endl;
-			os << "  Orientacja: " << _info_header->orientation << endl;
+			os << "  Orientacja: LEFT BOTTOM" << endl; // Jedyna zdefiniowana wartość to 0 (_info_header->orientation)
 			os << "  Półtonowanie: " << halftoning_to_string() << endl;
-			os << "  Półton parametr1: " << _info_header->halftoneSize1 << endl;
-			os << "  Półton parametr2: " << _info_header->halftoneSize2 << endl;
-			os << "  Przestrzeń koloru: " << _info_header->colorSpace << endl;
+			os << "  Półtonowanie parametr1: " << _info_header->halftoneSize1 << endl;
+			os << "  Półtonowanie parametr2: " << _info_header->halftoneSize2 << endl;
+			os << "  Przestrzeń koloru: RGB" << endl; // Jedyna zdefiniowana wartość to 0 (_info_header->colorSpace)
 			os << "  Identyfikator: " << _info_header->appData << endl;
 		}
 		else if(type != bmp::DIBHeaderType::CORE_HEADER_V1 && _info_header->size >= bmp::IHV2_SIZE) {
@@ -284,20 +305,20 @@ namespace file
 		os << "  Rozmiar przestrzeni wyrównania2: " << _file_info->gab2 << endl;
 		os << "  Dodatkowa maska: ";
 
-		if(true) {
-			os << "rozmair: " << 16 << endl;
-			os << "    RedMask: " << _file_info->red_mask << endl;
-			os << "    RedMask: " << _file_info->green_mask << endl;
-			os << "    RedMask: " << _file_info->blue_mask << endl;
-			os << "    RedMask: ";
+		if(_file_info->exist_mask) {
+			os << "Rozmaiar: " << (3 + (_file_info->exist_alpha))*4 << endl;
+			os << "  Maska czerwona:  " << bitset<32>(_file_info->red_mask) << endl;
+			os << "  Maska zielona:   " << bitset<32>(_file_info->green_mask) << endl;
+			os << "  Maska niebieska: " << bitset<32>(_file_info->blue_mask) << endl;
+			os << "  Maska alfa:      ";
 
-			if(true)
-				os << _file_info->alpha_mask << endl;
+			if(_file_info->exist_alpha)
+				os << bitset<32>(_file_info->alpha_mask) << endl;
 			else
-				os << "Niezdefiniowano" << endl;
+				os << "Nie zdefiniowano" << endl;
 		}
 		else
-			os << "Niezdefiniowano" << endl;
+			os << "Nie występuje" << endl;
 
 	}
 

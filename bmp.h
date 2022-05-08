@@ -52,6 +52,7 @@ namespace file
 
 			void load_header(std::istream&);
 			void load_dib(std::istream&);
+			void load_mask(std::istream&);
 			void load_pixsels(std::istream&);
 
 			void info_header(std::ostream&);
