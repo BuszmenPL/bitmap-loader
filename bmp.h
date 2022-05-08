@@ -63,9 +63,11 @@ namespace file
 
 			void get_dib_type();
 			void get_endpoints(char*);
-			
+
 			std::string to_string();
 			std::string dib_to_string();
+			std::string endpoint_to_string();
+			//std::string mask_to_string(bmp::DWORD);
 	};
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

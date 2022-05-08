@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <bitset>
 #include "type.h"
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 using namespace std;
@@ -199,12 +200,69 @@ namespace file
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::info_dib(std::ostream& os) {
-		/*os << "Nagłówek DIB" << endl;
-		os << "  Typ/Sygnatura: " << to_string() << endl;
-		os << "  Rozmiar: " << _file_header->size << endl;
-		os << "  Zarezerwowany1: " << _file_header->reserved1 << endl;
-		os << "  Zarezerwowany2: " << _file_header->reserved2 << endl;
-		os << "  Offset tablicy pikseli: " << _file_header->offBits << endl << endl;*/
+		const bmp::DIBHeaderType type = _file_info->dib_type;
+
+		os << "Nagłówek DIB" << endl;
+		os << "  Rozmiar: " << _info_header->size << endl;
+		os << "  Szerokość: " << width() << endl;
+		os << "  Wysokość: " << height() << endl;
+		os << "  Ilość płaszczyzn: " << _info_header->planes << endl;
+		os << "  Głębia: " << _info_header->bitCount << endl;
+
+		if(type != bmp::DIBHeaderType::CORE_HEADER_V1) {
+			os << "  Kompresja: " << _info_header->compression << endl;
+			os << "  Rozmiar tablicy pikseli: " << _info_header->sizeImage << endl;
+		}
+
+		if(type == bmp::DIBHeaderType::CORE_HEADER_V2) {
+			os << "  xRes: " << _info_header->xRes << endl;
+			os << "  yRes: " << _info_header->yRes << endl;
+		}
+		else {
+			os << "  xPelsPerMeter: " << _info_header->xPelsPerMeter << endl;
+			os << "  yPelsPerMeter: " << _info_header->yPelsPerMeter << endl;
+		}
+
+		if(type != bmp::DIBHeaderType::CORE_HEADER_V1) {
+			os << "  clrUsed: " << _info_header->clrUsed << endl;
+			os << "  clrImportant: " << _info_header->clrImportant << endl;
+		}
+
+		if(type == bmp::DIBHeaderType::CORE_HEADER_V2) {
+			os << "  resUnit: " << _info_header->resUnit << endl;
+			os << "  Zarezerwowany: " << _info_header->cReserved << endl;
+			os << "  Orientacja: " << _info_header->orientation << endl;
+			os << "  Półtonowanie: " << _info_header->halftoning << endl;
+			os << "  Półton parametr1: " << _info_header->halftoneSize1 << endl;
+			os << "  Półton parametr2: " << _info_header->halftoneSize2 << endl;
+			os << "  Przestrzeń koloru: " << _info_header->colorSpace << endl;
+			os << "  Identyfikator: " << _info_header->appData << endl;
+		}
+		else if(type != bmp::DIBHeaderType::CORE_HEADER_V1 && _info_header->size >= bmp::IHV2_SIZE) {
+			os << "  Maska czerwona:  " << bitset<32>(_info_header->redMask) << endl;
+			os << "  Maska zielona:   " << bitset<32>(_info_header->greenMask) << endl;
+			os << "  Maska niebieska: " << bitset<32>(_info_header->blueMask) << endl;
+
+			if(_info_header->size >= bmp::IHV3_SIZE)
+				os << "  Maska alfa: " << _info_header->alphaMask << endl;
+
+			if(_info_header->size >= bmp::IHV4_SIZE) {
+				os << "  Typ przestrzeni kolorów: " << _info_header->cSType << endl;
+				os << "  Endpoint: " << endpoint_to_string() << endl;
+				os << "  Gamma czerwona: " << _info_header->gammaRed << endl;
+				os << "  Gamma zielona: " << _info_header->gammaGreen << endl;
+				os << "  Gamma niebieska: " << _info_header->gammaBlue << endl;
+			}
+
+			if(_info_header->size >= bmp::IHV5_SIZE) {
+				os << "  intent: " << _info_header->intent << endl;
+				os << "  Offset ICC: " << _info_header->profileData << endl;
+				os << "  Rozmair ICC: " << _info_header->profileSize << endl;
+				os << "  Zarezerwowany: " << _info_header->reserved << endl;
+			}
+		}
+
+		os << endl;
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::info_color_table(std::ostream& os) {
@@ -296,4 +354,24 @@ namespace file
 
 		return text;
 	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	std::string BMP::endpoint_to_string() {
+		string text;
+		return text;
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	/*std::string BMP::mask_to_string(bmp::DWORD m) {
+		string text{"0x"};
+
+		for(uint32_t i{sizeof(bmp::DWORD)*2}; i!=0; --i) {
+			char c = static_cast<char>((m >> (4*(i-1))) & 0xf) + '0';
+
+			if(c > '9')
+				c += 7; // różnica pomiędzy liczbami a literami
+
+			text += c;
+		}
+
+		return text;
+	}*/
 }
