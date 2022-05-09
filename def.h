@@ -229,6 +229,7 @@ namespace file
 		constexpr uint32_t FXPT2DOT30_SIZE {sizeof(DWORD)};
 		constexpr uint32_t CIEXYZ_SIZE {(FXPT2DOT30_SIZE*3)};
 		constexpr uint32_t CIEXYZTRIPLE_SIZE {(CIEXYZ_SIZE*3)};
+		constexpr uint32_t FILE_HEADER_SIZE {14};
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		struct InfoHeader :public DIBHeaderV5
 		{
@@ -268,7 +269,15 @@ namespace file
 			OS22XBITMAPHEADER = BITMAPCOREHEADER2
 		};
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		using ColorTable = std::unique_ptr<DWORD []>;
+		struct Color
+		{
+			BYTE red;
+			BYTE green;
+			BYTE blue;
+			BYTE alpha;
+		};
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		using ColorTable = std::unique_ptr<Color []>;
 		using PixelArray = std::unique_ptr<BYTE []>;
 		using ICCColorProfile = std::unique_ptr<BYTE []>;
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

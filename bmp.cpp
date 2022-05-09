@@ -3,10 +3,12 @@
 #include <fstream>
 #include <stdexcept>
 #include <bitset>
+#include <cmath>
 #include "type.h"
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 using namespace std;
 
+#define convertB() type::convert<bmp::BYTE>(array);
 #define convertW() type::convert<bmp::WORD>(array);
 #define convertD() type::convert<bmp::DWORD>(array);
 #define convertL() type::convert<bmp::LONG>(array);
@@ -86,11 +88,10 @@ namespace file
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::load_header(std::istream& file) {
 		constexpr uint32_t DIB_SIZE {sizeof(bmp::DWORD)};
-		constexpr uint32_t FILE_HEADER_SIZE {14};
 
-		type::Array array(FILE_HEADER_SIZE + DIB_SIZE);
+		type::Array array(bmp::FILE_HEADER_SIZE + DIB_SIZE);
 		// ładowanie nagłówka pliku + rozmiar nagłówka DIB
-		file.read(array.get(), FILE_HEADER_SIZE + DIB_SIZE);
+		file.read(array.get(), bmp::FILE_HEADER_SIZE + DIB_SIZE);
 
 		_file_header->type = convertW();
 
@@ -200,7 +201,45 @@ namespace file
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::load_color_table(std::istream& file) {
 		if(_info_header->clrUsed || _info_header->bitCount <= 8) {
+			// Ilość wpisów w tabeli kolorów
+			const uint32_t n = (_info_header->clrUsed?_info_header->clrUsed:pow(2, _info_header->bitCount));
+			_color_table = move(bmp::ColorTable(new bmp::Color [n]));
 
+			// dla nagłówka DIB = BITMAPCOREHEADER2 przypada 3-bajty na kolor RGB24
+			if(_file_info->dib_type == bmp::DIBHeaderType::CORE_HEADER_V2) {
+				type::Array array(n*3);
+				file.read(array.get(), n*3);
+
+				for(uint32_t i{}; i<n; ++i) {
+					_color_table[i].blue = convertB();
+					_color_table[i].green = convertB();
+					_color_table[i].red = convertB();
+					_color_table[i].alpha = 0;
+				}
+			}
+			else { // domyślnie format RGBA32, 4-bajty na kolor
+				/// dodatkowe bajty przeznaczone na maske
+				const uint32_t mask = (_file_info->exist_mask?(3 + _file_info->exist_alpha):0);
+				// gab1 + paleta kolorów
+				const uint32_t size = _file_header->offBits - (bmp::FILE_HEADER_SIZE + _info_header->size + mask);
+
+				if(size >= n*4) {
+					type::Array array(n*4);
+					file.read(array.get(), n*4);
+
+					for(uint32_t i{}; i<n; ++i) {
+						_color_table[i].blue = convertB();
+						_color_table[i].green = convertB();
+						_color_table[i].red = convertB();
+						_color_table[i].alpha = convertB();
+					}
+				}
+				else { // 2-bajty na wpis rzadki przypadek
+					 /* wpisy te stanowią indeksy do aktualnie realizowanej palety,
+					 	zamiast wyraźnych definicji kolorów RGB*/
+
+				}
+			}
 		}
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -32,7 +32,7 @@ namespace file
 			bmp::InfoHeader* info_header()
 				{ return this->_info_header.get(); }
 
-			bmp::DWORD* color_table()
+			bmp::Color* color_table()
 				{ return this->_color_table.get(); }
 
 			bmp::BYTE* pixel_array()
