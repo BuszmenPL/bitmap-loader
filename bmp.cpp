@@ -28,6 +28,7 @@ namespace file
 			get_dib_type();
 			load_dib(file);		
 			load_mask(file);
+			load_gab();
 			load_color_table(file);
 			load_pixsels(file);
 		}
@@ -199,9 +200,25 @@ namespace file
 		}
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::load_gab() {
+		// dodatkowe maski
+		const uint32_t mask = (_file_info->exist_mask?(3 + _file_info->exist_alpha):0);
+		// gab + paleta kolorów
+		const uint32_t size = _file_header->offBits - (bmp::FILE_HEADER_SIZE + _info_header->size + mask);
+		// ilość wpisów w palecie kolorów
+		const uint32_t n = (_info_header->clrUsed?_info_header->clrUsed:pow(2, _info_header->bitCount));
+		// rozmiar palety kolorów
+		const uint32_t color = n * (_file_info->dib_type == bmp::DIBHeaderType::CORE_HEADER_V2?3:(size >= n*4?4:2))
+
+		_file_info->gab1 = size - color;
+
+		//const uint32_t padding = (_file_info->padding?1:0);
+		//const uint32_t offset = _file_header->offBits + (_info_header->sizeImage?_info_header->sizeImage:(width()*height()))
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::load_color_table(std::istream& file) {
 		if(_info_header->clrUsed || _info_header->bitCount <= 8) {
-			// Ilość wpisów w tabeli kolorów
+			// ilość wpisów w tabeli kolorów
 			const uint32_t n = (_info_header->clrUsed?_info_header->clrUsed:pow(2, _info_header->bitCount));
 			_color_table = move(bmp::ColorTable(new bmp::Color [n]));
 
