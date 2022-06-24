@@ -206,7 +206,7 @@ namespace file
 		// gab + paleta kolorów
 		const uint32_t size = _file_header->offBits - (bmp::FILE_HEADER_SIZE + _info_header->size + mask);
 		// ilość wpisów w palecie kolorów
-		const uint32_t n = (_info_header->clrUsed?_info_header->clrUsed:pow(2, _info_header->bitCount));
+		const uint32_t n = (_info_header->clrUsed?_info_header->clrUsed:0);//pow(2, _info_header->bitCount));
 		// rozmiar palety kolorów
 		const uint32_t color = n * (_file_info->dib_type == bmp::DIBHeaderType::CORE_HEADER_V2?3:(size >= n*4?4:2));
 
@@ -251,11 +251,11 @@ namespace file
 						_color_table[i].alpha = convertB();
 					}
 				}
-				else { // 2-bajty na wpis rzadki przypadek
+				/*else { // 2-bajty na wpis rzadki przypadek
 					 /* wpisy te stanowią indeksy do aktualnie realizowanej palety,
 					 	zamiast wyraźnych definicji kolorów RGB*/
 
-				}
+				//} Nieobsłógiwane
 			}
 		}
 	}
@@ -266,10 +266,10 @@ namespace file
 		_pixel_array = move(bmp::PixelArray(new bmp::BYTE [size]));
 		file.seekg(_file_header->offBits, istream::beg);
 
-		for(uint32_t i{}; i<height(); ++i) {
+		for(uint32_t i{}; i<height(); ++i) //{
 			file.read(reinterpret_cast<char*>(_pixel_array.get() + (width() * i)), width());
-			file.seekg(4, istream::cur);
-		}
+			//file.seekg(4, istream::cur);
+		//}
 	}
 
 	/* Info */
@@ -350,15 +350,43 @@ namespace file
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::info_color_table(std::ostream& os) {
+		os << "Tablica Kolorów" << endl;
 
+		const uint32_t n = (_info_header->clrUsed?_info_header->clrUsed:pow(2, _info_header->bitCount));
+		for(uint32_t i{}; i<n; ++i) {
+			os << "  Index [" << i << "]: R: " << this->_color_table[i].red;
+			os << " G: " << this->_color_table[i].green;
+			os << " B: " << this->_color_table[i].blue;
+			os << " A: " << this->_color_table[i].alpha << endl;
+		}
+
+		os << endl;
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::info_pixels_table(std::ostream& os) {
+		os << "Tablica pixeli" << endl;
+		os << "  pixels -> [" << std::hex;
 
+		const uint32_t n = (this->pixel_array_size() < 120?this->pixel_array_size():120);
+		for(uint32_t i{}; i<n; ++i)
+			os << ' ' << static_cast<int>(this->_pixel_array[i]);
+
+		if(n < 120)
+			os << " ]";
+		else
+			os << " ...]";
+
+		os << endl << endl;
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::info_icc(std::ostream& os) {
+		os << "ICCC Profile" << endl;
+		os << "  icc -> [" << std::hex;
 
+		for(uint32_t i{}; i<this->_info_header->profileSize; ++i)
+			os << ' ' << static_cast<uint>(this->_color_profile[i]);
+
+		os << " ]" << endl << endl;
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::info_file(std::ostream& os) {
