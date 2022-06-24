@@ -14,5 +14,13 @@ int main(int argc, const char* argv[])
 	bmp_file.load(argv[1]);
 	bmp_file.info(cout);
 
+	const uint32_t n = bmp_file.pixel_array_size();
+	auto array = bmp_file.pixel_array();
+
+	for(uint32_t i{}; i<n; ++i)
+		array[i] = (~(array[i])); // tworzenie negatywu
+
+	bmp_file.save(string{"negatyw_"} + argv[1]);
+
 	return 0;
 }
