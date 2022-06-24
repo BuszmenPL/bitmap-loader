@@ -5,6 +5,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 namespace type
 {
+	// Tablica przechowująca ciąg bajtów z pliku
 	class Array
 	{
 		public:
@@ -24,6 +25,8 @@ namespace type
 			char* array;
 			uint32_t sz;
 	};
+
+	// szablon do konwersji danych
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	template <typename T>
 	T convert(Array& array) {

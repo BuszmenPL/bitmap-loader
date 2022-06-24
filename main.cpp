@@ -10,6 +10,7 @@ int main(int argc, const char* argv[])
 		return 0;
 	}
 
+	// załadowanie pliku i wyświetlenie informacji
 	file::BMP bmp_file;
 	bmp_file.load(argv[1]);
 	bmp_file.info(cout);
@@ -17,9 +18,11 @@ int main(int argc, const char* argv[])
 	const uint32_t n = bmp_file.pixel_array_size();
 	auto array = bmp_file.pixel_array();
 
-	/*for(uint32_t i{}; i<n; ++i)
-		array[i] = (~(array[i])); // tworzenie negatywu*/
+	// negacja wartości
+	for(uint32_t i{}; i<n; ++i)
+		array[i] = (~(array[i]));
 
+	// zapisanie pliku
 	bmp_file.save(string{"negatyw_"} + argv[1]);
 
 	return 0;

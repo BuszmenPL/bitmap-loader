@@ -268,7 +268,7 @@ namespace file
 					 /* wpisy te stanowią indeksy do aktualnie realizowanej palety,
 					 	zamiast wyraźnych definicji kolorów RGB*/
 
-				//} Nieobsłógiwane
+				//} Nieobsłógiwane - brak konkretnych informacji
 			}
 		}
 	}
@@ -279,10 +279,8 @@ namespace file
 		_pixel_array = move(bmp::PixelArray(new bmp::BYTE [size]));
 		file.seekg(_file_header->offBits, istream::beg);
 
-		for(uint32_t i{}; i<height(); ++i) //{
-			file.read(reinterpret_cast<char*>(_pixel_array.get() + (width() * i)), width() * pixel_size());
-			//file.seekg(4, istream::cur);
-		//}
+		// ładowanie danych
+		file.read(reinterpret_cast<char*>(_pixel_array.get()), pixel_array_size());
 	}
 
 	/* Save */
@@ -293,7 +291,6 @@ namespace file
 		file.write(ptr(_file_header->reserved1), sizeof(bmp::WORD));
 		file.write(ptr(_file_header->reserved2), sizeof(bmp::WORD));
 		file.write(ptr(_file_header->offBits), sizeof(bmp::DWORD));
-		//file << _file_header->size << _file_header->reserved1 << _file_header->reserved2 << _file_header->offBits;
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::save_dib(std::ostream& file) {
@@ -611,18 +608,4 @@ namespace file
 
 		return text;
 	}
-	/*std::string BMP::mask_to_string(bmp::DWORD m) {
-		string text{"0x"};
-
-		for(uint32_t i{sizeof(bmp::DWORD)*2}; i!=0; --i) {
-			char c = static_cast<char>((m >> (4*(i-1))) & 0xf) + '0';
-
-			if(c > '9')
-				c += 7; // różnica pomiędzy liczbami a literami
-
-			text += c;
-		}
-
-		return text;
-	}*/
 }

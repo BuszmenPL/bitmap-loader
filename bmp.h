@@ -77,7 +77,6 @@ namespace file
 			std::string endpoint_to_string();
 			std::string compression_to_string();
 			std::string halftoning_to_string();
-			//std::string mask_to_string(bmp::DWORD);
 	};
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
