@@ -208,7 +208,7 @@ namespace file
 		// ilość wpisów w palecie kolorów
 		const uint32_t n = (_info_header->clrUsed?_info_header->clrUsed:pow(2, _info_header->bitCount));
 		// rozmiar palety kolorów
-		const uint32_t color = n * (_file_info->dib_type == bmp::DIBHeaderType::CORE_HEADER_V2?3:(size >= n*4?4:2))
+		const uint32_t color = n * (_file_info->dib_type == bmp::DIBHeaderType::CORE_HEADER_V2?3:(size >= n*4?4:2));
 
 		_file_info->gab1 = size - color;
 
