@@ -57,6 +57,10 @@ namespace file
 			void load_color_table(std::istream&);
 			void load_pixsels(std::istream&);
 
+			void save_header(std::ostream&);
+			void save_dib(std::ostream&);
+			void save_pixels(std::ostream&);
+
 			void info_header(std::ostream&);
 			void info_dib(std::ostream&);
 			void info_color_table(std::ostream&);
@@ -66,6 +70,7 @@ namespace file
 
 			void get_dib_type();
 			void get_endpoints(char*);
+			void set_endpoints(std::ostream&);
 
 			std::string to_string();
 			std::string dib_to_string();

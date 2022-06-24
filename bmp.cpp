@@ -12,6 +12,7 @@ using namespace std;
 #define convertW() type::convert<bmp::WORD>(array);
 #define convertD() type::convert<bmp::DWORD>(array);
 #define convertL() type::convert<bmp::LONG>(array);
+#define ptr(arg) reinterpret_cast<char*>(&arg)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 namespace file
 {
@@ -38,7 +39,19 @@ namespace file
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::save(std::string f) {
+		ofstream file;
+		file.exceptions(ofstream::failbit | ofstream::badbit);
 
+		try {
+			file.open(f, ios::binary);
+
+			save_header(file);
+			save_dib(file);		
+			save_pixels(file);
+		}
+		catch(ofstream::failure& error) {
+			throw runtime_error(error.what());
+		}
 	}
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void BMP::info(std::ostream& os) {
@@ -267,9 +280,90 @@ namespace file
 		file.seekg(_file_header->offBits, istream::beg);
 
 		for(uint32_t i{}; i<height(); ++i) //{
-			file.read(reinterpret_cast<char*>(_pixel_array.get() + (width() * i)), width());
+			file.read(reinterpret_cast<char*>(_pixel_array.get() + (width() * i)), width() * pixel_size());
 			//file.seekg(4, istream::cur);
 		//}
+	}
+
+	/* Save */
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::save_header(std::ostream& file) {
+		file << "BM"; // Wartość kontrolana
+		file.write(ptr(_file_header->size), sizeof(bmp::DWORD));
+		file.write(ptr(_file_header->reserved1), sizeof(bmp::WORD));
+		file.write(ptr(_file_header->reserved2), sizeof(bmp::WORD));
+		file.write(ptr(_file_header->offBits), sizeof(bmp::DWORD));
+		//file << _file_header->size << _file_header->reserved1 << _file_header->reserved2 << _file_header->offBits;
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::save_dib(std::ostream& file) {
+		file.write(ptr(_info_header->size), sizeof(bmp::DWORD));
+
+		if(_file_info->dib_type == bmp::DIBHeaderType::CORE_HEADER_V1) {
+			file.write(ptr(_info_header->cWidth), sizeof(bmp::WORD));
+			file.write(ptr(_info_header->cHeight), sizeof(bmp::WORD));
+			file.write(ptr(_info_header->planes), sizeof(bmp::WORD));
+			file.write(ptr(_info_header->bitCount), sizeof(bmp::WORD));
+		}
+		else if(_file_info->dib_type == bmp::DIBHeaderType::CORE_HEADER_V2) {
+			file.write(ptr(_info_header->cWidth), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->cHeight), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->planes), sizeof(bmp::WORD));
+			file.write(ptr(_info_header->bitCount), sizeof(bmp::WORD));
+			file.write(ptr(_info_header->compression), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->sizeImage), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->xRes), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->yRes), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->clrUsed), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->clrImportant), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->resUnit), sizeof(bmp::WORD));
+			file.write(ptr(_info_header->cReserved), sizeof(bmp::WORD));
+			file.write(ptr(_info_header->orientation), sizeof(bmp::WORD));
+			file.write(ptr(_info_header->halftoning), sizeof(bmp::WORD));
+			file.write(ptr(_info_header->halftoneSize1), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->halftoneSize2), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->colorSpace), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->appData), sizeof(bmp::DWORD));
+		}
+		else {
+			file.write(ptr(_info_header->width), sizeof(bmp::LONG));
+			file.write(ptr(_info_header->height), sizeof(bmp::LONG));
+			file.write(ptr(_info_header->planes), sizeof(bmp::WORD));
+			file.write(ptr(_info_header->bitCount), sizeof(bmp::WORD));
+			file.write(ptr(_info_header->compression), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->sizeImage), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->xPelsPerMeter), sizeof(bmp::LONG));
+			file.write(ptr(_info_header->yPelsPerMeter), sizeof(bmp::LONG));
+			file.write(ptr(_info_header->clrUsed), sizeof(bmp::DWORD));
+			file.write(ptr(_info_header->clrImportant), sizeof(bmp::DWORD));
+
+			if(_info_header->size >= bmp::IHV2_SIZE) {
+				file.write(ptr(_info_header->redMask), sizeof(bmp::DWORD));
+				file.write(ptr(_info_header->greenMask), sizeof(bmp::DWORD));
+				file.write(ptr(_info_header->blueMask), sizeof(bmp::DWORD));
+			}
+			if(_info_header->size >= bmp::IHV3_SIZE)
+				file.write(ptr(_info_header->alphaMask), sizeof(bmp::DWORD));
+
+			if(_info_header->size >= bmp::IHV4_SIZE) {
+				file.write(ptr(_info_header->cSType), sizeof(bmp::DWORD));
+				set_endpoints(file);
+				file.write(ptr(_info_header->gammaRed), sizeof(bmp::DWORD));
+				file.write(ptr(_info_header->gammaGreen), sizeof(bmp::DWORD));
+				file.write(ptr(_info_header->gammaBlue), sizeof(bmp::DWORD));
+			}
+
+			if(_info_header->size == bmp::IHV5_SIZE) {
+				file.write(ptr(_info_header->intent), sizeof(bmp::DWORD));
+				file.write(ptr(_info_header->profileData), sizeof(bmp::DWORD));
+				file.write(ptr(_info_header->profileSize), sizeof(bmp::DWORD));
+				file.write(ptr(_info_header->reserved), sizeof(bmp::DWORD));
+			}
+		}
+	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::save_pixels(std::ostream& file) {
+		file.write(reinterpret_cast<char*>(_pixel_array.get()), pixel_array_size());
 	}
 
 	/* Info */
@@ -354,10 +448,10 @@ namespace file
 
 		const uint32_t n = (_info_header->clrUsed?_info_header->clrUsed:pow(2, _info_header->bitCount));
 		for(uint32_t i{}; i<n; ++i) {
-			os << "  Index [" << i << "]: R: " << this->_color_table[i].red;
-			os << " G: " << this->_color_table[i].green;
-			os << " B: " << this->_color_table[i].blue;
-			os << " A: " << this->_color_table[i].alpha << endl;
+			os << "  Index [" << i << "]: R: " << _color_table[i].red;
+			os << " G: " << _color_table[i].green;
+			os << " B: " << _color_table[i].blue;
+			os << " A: " << _color_table[i].alpha << endl;
 		}
 
 		os << endl;
@@ -367,9 +461,9 @@ namespace file
 		os << "Tablica pixeli" << endl;
 		os << "  pixels -> [" << std::hex;
 
-		const uint32_t n = (this->pixel_array_size() < 120?this->pixel_array_size():120);
+		const uint32_t n = (pixel_array_size() < 120?pixel_array_size():120);
 		for(uint32_t i{}; i<n; ++i)
-			os << ' ' << static_cast<int>(this->_pixel_array[i]);
+			os << ' ' << static_cast<int>(_pixel_array[i]);
 
 		if(n < 120)
 			os << " ]";
@@ -383,8 +477,8 @@ namespace file
 		os << "ICCC Profile" << endl;
 		os << "  icc -> [" << std::hex;
 
-		for(uint32_t i{}; i<this->_info_header->profileSize; ++i)
-			os << ' ' << static_cast<uint>(this->_color_profile[i]);
+		for(uint32_t i{}; i<_info_header->profileSize; ++i)
+			os << ' ' << static_cast<uint>(_color_profile[i]);
 
 		os << " ]" << endl << endl;
 	}
@@ -439,6 +533,21 @@ namespace file
 		_info_header->endpoints.green = load_vector(array + bmp::CIEXYZ_SIZE);
 		_info_header->endpoints.red = load_vector(array + (2*bmp::CIEXYZ_SIZE));
 	}
+
+	/* Set */
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	void BMP::set_endpoints(std::ostream& f) {
+		auto save_vector = [&](bmp::Vector v) -> void {
+			f.write(ptr(v.z), sizeof(bmp::FXPT2DOT30_SIZE));
+			f.write(ptr(v.y), sizeof(bmp::FXPT2DOT30_SIZE));
+			f.write(ptr(v.x), sizeof(bmp::FXPT2DOT30_SIZE));
+		};
+
+		save_vector(_info_header->endpoints.blue);
+		save_vector(_info_header->endpoints.green);
+		save_vector(_info_header->endpoints.red);
+	}
+
 
 	/* Info */
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
